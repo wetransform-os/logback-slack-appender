@@ -1,19 +1,21 @@
 package com.github.maricn.logback;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Layout;
 import ch.qos.logback.core.LayoutBase;
@@ -44,9 +46,10 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         try {
             if (webhookUri != null) {
                 sendMessageWithWebhookUri(evt);
-            } else {
+            } else if (token != null) {
                 sendMessageWithToken(evt);
             }
+            // just ignore if there is neither token nor webhook configured
         } catch (Exception ex) {
             ex.printStackTrace();
             addError("Error posting log to Slack.com (" + channel + "): " + evt, ex);
@@ -57,22 +60,93 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         String[] parts = layout.doLayout(evt).split("\n", 2);
 
         Map<String, Object> message = new HashMap<>();
-        message.put("channel", channel);
-        message.put("username", username);
-        message.put("icon_emoji", iconEmoji);
-        message.put("text", parts[0]);
+        if (channel != null && !channel.trim().isEmpty()) {
+            message.put("channel", channel);
+        }
+        if (username != null && !username.trim().isEmpty()) {
+            message.put("username", username);
+        }
+        if (iconEmoji != null && !iconEmoji.trim().isEmpty()) {
+            boolean isUrl = false;
+            try {
+                URI uri = URI.create(iconEmoji);
+                isUrl = uri.isAbsolute() && uri.getScheme().startsWith("http");
+            } catch (Exception e) {
+                // ignore
+            }
+
+            if (isUrl) {
+                // use icon URL if a URL is provided
+                message.put("icon_url", iconEmoji);
+            }
+            else {
+                String emoji = iconEmoji;
+                /*
+                 * Ensure that the emoji is correctly identified.
+                 *
+                 * This is done to support configurations like
+                 * ${SLACK_LOG_ICON:-exclamation} in the logback config
+                 * file, because it does not seem possible to put colons
+                 * there (and I did not find a way to escape them).
+                 */
+                if (!emoji.startsWith(":")) {
+                    emoji = ":" + emoji;
+                }
+                if (!emoji.endsWith(":")) {
+                    emoji = emoji + ":";
+                }
+
+                message.put("icon_emoji", emoji);
+            }
+        }
+
+        String mainMsg = parts[0];
+        List<Map<String, String>> attachments = new ArrayList<>();
+        String levelColor = getDefaultLevelColor(evt.getLevel());
 
         // Send the lines below the first line as an attachment.
-        if (parts.length > 1) {
+        if (parts.length > 1 && !parts[1].trim().isEmpty()) {
+            // we have two parts -> use main part a pretext
             Map<String, String> attachment = new HashMap<>();
+            attachment.put("pretext", mainMsg);
+            attachment.put("fallback", mainMsg);
+            attachment.put("color", levelColor);
             attachment.put("text", parts[1]);
-            message.put("attachments", Arrays.asList(attachment));
+            attachments.add(attachment);
         }
+        else {
+            // just message -> use as attachment text
+            Map<String, String> attachment = new HashMap<>();
+            attachment.put("fallback", mainMsg);
+            attachment.put("color", levelColor);
+            attachment.put("text", mainMsg);
+            attachments.add(attachment);
+        }
+        message.put("attachments", attachments);
 
         ObjectMapper objectMapper = new ObjectMapper();
         final byte[] bytes = objectMapper.writeValueAsBytes(message);
 
         postMessage(webhookUri, "application/json", bytes);
+    }
+
+    /**
+     * Get a default color based on the log level.
+     *
+     * @param level the log level
+     * @return the default color, may be <code>null</code>
+     */
+    private String getDefaultLevelColor(Level level) {
+        if (level.isGreaterOrEqual(Level.ERROR)) {
+            return "danger";
+        }
+        if (level.isGreaterOrEqual(Level.WARN)) {
+            return "warning";
+        }
+        if (level.isGreaterOrEqual(Level.INFO)) {
+            return "#439FE0";
+        }
+        return null;
     }
 
     private void sendMessageWithToken(final ILoggingEvent evt) throws IOException {
