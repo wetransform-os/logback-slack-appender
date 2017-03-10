@@ -159,6 +159,8 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
                 
                 field.put("short", entry.getValue() == null
                         || entry.getValue().length() <= SHORT_FIELD_THRESHOLD);
+                
+                fields.add(field);
             }
             
             return fields;
