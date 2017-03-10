@@ -108,6 +108,7 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         String levelColor = getDefaultLevelColor(evt.getLevel());
         
         List<Map<String, Object>> fields = createFields(evt);
+        long timestamp = evt.getTimeStamp() / 1000;
 
         // Send the lines below the first line as an attachment.
         if (parts.length > 1 && !parts[1].trim().isEmpty()) {
@@ -120,7 +121,7 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             if (fields != null) {
                 attachment.put("fields", fields);
             }
-            attachment.put("ts", evt.getTimeStamp());
+            attachment.put("ts", timestamp);
             attachments.add(attachment);
         }
         else {
@@ -132,7 +133,7 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             if (fields != null) {
                 attachment.put("fields", fields);
             }
-            attachment.put("ts", evt.getTimeStamp());
+            attachment.put("ts", timestamp);
             attachments.add(attachment);
         }
         message.put("attachments", attachments);
