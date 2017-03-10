@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,6 +21,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Layout;
 import ch.qos.logback.core.LayoutBase;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import to.wetf.logging.slf4j.Markers;
 
 public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
@@ -40,6 +42,8 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private Layout<ILoggingEvent> layout = defaultLayout;
 
     private int timeout = 30_000;
+    
+    private int shortFieldLimit = 25;
 
     @Override
     protected void append(final ILoggingEvent evt) {
@@ -101,25 +105,36 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         }
 
         String mainMsg = parts[0];
-        List<Map<String, String>> attachments = new ArrayList<>();
+        List<Map<String, Object>> attachments = new ArrayList<>();
         String levelColor = getDefaultLevelColor(evt.getLevel());
+        
+        List<Map<String, Object>> fields = createFields(evt);
+        long timestamp = evt.getTimeStamp() / 1000;
 
         // Send the lines below the first line as an attachment.
         if (parts.length > 1 && !parts[1].trim().isEmpty()) {
             // we have two parts -> use main part a pretext
-            Map<String, String> attachment = new HashMap<>();
+            Map<String, Object> attachment = new HashMap<>();
             attachment.put("pretext", mainMsg);
             attachment.put("fallback", mainMsg);
             attachment.put("color", levelColor);
             attachment.put("text", parts[1]);
+            if (fields != null) {
+                attachment.put("fields", fields);
+            }
+            attachment.put("ts", timestamp);
             attachments.add(attachment);
         }
         else {
             // just message -> use as attachment text
-            Map<String, String> attachment = new HashMap<>();
+            Map<String, Object> attachment = new HashMap<>();
             attachment.put("fallback", mainMsg);
             attachment.put("color", levelColor);
             attachment.put("text", mainMsg);
+            if (fields != null) {
+                attachment.put("fields", fields);
+            }
+            attachment.put("ts", timestamp);
             attachments.add(attachment);
         }
         message.put("attachments", attachments);
@@ -128,6 +143,32 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         final byte[] bytes = objectMapper.writeValueAsBytes(message);
 
         postMessage(webhookUri, "application/json", bytes);
+    }
+
+    private List<Map<String, Object>> createFields(ILoggingEvent evt) {
+        Map<String, String> contextInfo = Markers.getContext(evt.getMarker());
+        
+        //TODO also include extra information that may be configured?
+        
+        if (!contextInfo.isEmpty()) {
+            List<Map<String, Object>> fields = new ArrayList<>();
+            
+            for (Entry<String, String> entry : contextInfo.entrySet()) {
+                Map<String, Object> field = new HashMap<>();
+                field.put("title", entry.getKey());
+                field.put("value", entry.getValue());
+                
+                field.put("short", entry.getValue() == null
+                        || entry.getValue().length() <= shortFieldLimit);
+                
+                fields.add(field);
+            }
+            
+            return fields;
+        }
+        else {
+            return null;
+        }
     }
 
     /**
@@ -252,6 +293,14 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     public void setWebhookUri(String webhookUri) {
         this.webhookUri = webhookUri;
+    }
+
+    public int getShortFieldLimit() {
+        return shortFieldLimit;
+    }
+
+    public void setShortFieldLimit(int shortFieldLimit) {
+        this.shortFieldLimit = shortFieldLimit;
     }
 
 }

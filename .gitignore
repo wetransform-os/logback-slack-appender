@@ -56,7 +56,6 @@ crashlytics-build.properties
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.ear
 
@@ -75,6 +74,11 @@ dependency-reduced-pom.xml
 buildNumber.properties
 
 # Eclipse
-/.settings/
-/.classpath
-/.project
+*/.settings/
+*/.classpath
+*/.project
+*/bin
+
+# Gradle
+.gradle/
+*/build/
