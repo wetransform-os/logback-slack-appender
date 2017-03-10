@@ -27,6 +27,8 @@ Changes include:
 - extend emoji by colons if not present
 - add timestamp in attachment footer
 - support for context markers (as attachment fields) from utility library above
+- messages with `IMPORTANT` marker mention `@everyone`
+- include logger name as author
 
 The library is available in the [wetransform artifactory](https://artifactory.wetransform.to): `to.wetransform.logging:slack-appender:<version>`.
 
@@ -46,7 +48,7 @@ Add the Slack appender to your logback configuration file. Here is an example:
     <channel>${SLACK_LOG_CHANNEL:-#logs}</channel>
     <!-- Formatting (you can use Slack formatting - URL links, code formatting, etc.) -->
     <layout class="ch.qos.logback.classic.PatternLayout">
-      <pattern>%message - %logger{10}%n%xException{10}%n</pattern>
+      <pattern>%message%n%xException{10}%n</pattern>
     </layout>
     <!-- Username of the messages sender -->
     <username>${SLACK_LOG_NAME:-logger}</username>

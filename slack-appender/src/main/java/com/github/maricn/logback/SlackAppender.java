@@ -42,7 +42,7 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private Layout<ILoggingEvent> layout = defaultLayout;
 
     private int timeout = 30_000;
-    
+
     private int shortFieldLimit = 25;
 
     @Override
@@ -107,7 +107,7 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         String mainMsg = parts[0];
         List<Map<String, Object>> attachments = new ArrayList<>();
         String levelColor = getDefaultLevelColor(evt.getLevel());
-        
+
         List<Map<String, Object>> fields = createFields(evt);
         long timestamp = evt.getTimeStamp() / 1000;
 
@@ -117,32 +117,30 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             message.put("text", "<!everyone> please have a look at this log message:");
         }
 
-        // Send the lines below the first line as an attachment.
+        String author = evt.getLoggerName();
+
+        Map<String, Object> attachment = new HashMap<>();
         if (parts.length > 1 && !parts[1].trim().isEmpty()) {
             // we have two parts -> use main part a pretext
-            Map<String, Object> attachment = new HashMap<>();
             attachment.put("pretext", mainMsg);
-            attachment.put("fallback", mainMsg);
-            attachment.put("color", levelColor);
             attachment.put("text", parts[1]);
-            if (fields != null) {
-                attachment.put("fields", fields);
-            }
-            attachment.put("ts", timestamp);
-            attachments.add(attachment);
+
         }
         else {
             // just message -> use as attachment text
-            Map<String, Object> attachment = new HashMap<>();
-            attachment.put("fallback", mainMsg);
-            attachment.put("color", levelColor);
             attachment.put("text", mainMsg);
-            if (fields != null) {
-                attachment.put("fields", fields);
-            }
-            attachment.put("ts", timestamp);
-            attachments.add(attachment);
         }
+        attachment.put("fallback", mainMsg);
+        attachment.put("color", levelColor);
+        if (fields != null) {
+            attachment.put("fields", fields);
+        }
+        if (author != null) {
+            attachment.put("author_name", author);
+        }
+        attachment.put("ts", timestamp);
+        attachments.add(attachment);
+
         message.put("attachments", attachments);
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -153,23 +151,23 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     private List<Map<String, Object>> createFields(ILoggingEvent evt) {
         Map<String, String> contextInfo = Markers.getContext(evt.getMarker());
-        
+
         //TODO also include extra information that may be configured?
-        
+
         if (!contextInfo.isEmpty()) {
             List<Map<String, Object>> fields = new ArrayList<>();
-            
+
             for (Entry<String, String> entry : contextInfo.entrySet()) {
                 Map<String, Object> field = new HashMap<>();
                 field.put("title", entry.getKey());
                 field.put("value", entry.getValue());
-                
+
                 field.put("short", entry.getValue() == null
                         || entry.getValue().length() <= shortFieldLimit);
-                
+
                 fields.add(field);
             }
-            
+
             return fields;
         }
         else {
