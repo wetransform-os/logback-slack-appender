@@ -26,7 +26,6 @@ import to.wetf.logging.slf4j.Markers;
 public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     private final static String API_URL = "https://slack.com/api/chat.postMessage";
-    private static final int SHORT_FIELD_THRESHOLD = 20;
     private static Layout<ILoggingEvent> defaultLayout = new LayoutBase<ILoggingEvent>() {
         public String doLayout(ILoggingEvent event) {
             return "-- [" + event.getLevel() + "]" +
@@ -43,6 +42,8 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private Layout<ILoggingEvent> layout = defaultLayout;
 
     private int timeout = 30_000;
+    
+    private int shortFieldLimit = 25;
 
     @Override
     protected void append(final ILoggingEvent evt) {
@@ -158,7 +159,7 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
                 field.put("value", entry.getValue());
                 
                 field.put("short", entry.getValue() == null
-                        || entry.getValue().length() <= SHORT_FIELD_THRESHOLD);
+                        || entry.getValue().length() <= shortFieldLimit);
                 
                 fields.add(field);
             }
@@ -292,6 +293,14 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     public void setWebhookUri(String webhookUri) {
         this.webhookUri = webhookUri;
+    }
+
+    public int getShortFieldLimit() {
+        return shortFieldLimit;
+    }
+
+    public void setShortFieldLimit(int shortFieldLimit) {
+        this.shortFieldLimit = shortFieldLimit;
     }
 
 }
