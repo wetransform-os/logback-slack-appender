@@ -67,6 +67,14 @@ Add the Slack appender to your logback configuration file. Here is an example:
       <onMismatch>NEUTRAL</onMismatch>
       <onMatch>DENY</onMatch>
     </filter>
+    <!-- Accept any IMPORTANT markers -->
+    <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+      <evaluator class="ch.qos.logback.classic.boolex.OnMarkerEvaluator">
+        <marker>IMPORTANT</marker>
+      </evaluator>
+      <onMismatch>NEUTRAL</onMismatch>
+      <onMatch>ACCEPT</onMatch>
+    </filter>
     <!-- Accept any SLACK markers -->
     <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
       <evaluator class="ch.qos.logback.classic.boolex.OnMarkerEvaluator">

@@ -111,6 +111,12 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         List<Map<String, Object>> fields = createFields(evt);
         long timestamp = evt.getTimeStamp() / 1000;
 
+        // determine if event is "important"
+        boolean important = Markers.findMarker(evt.getMarker(), Markers.MARKER_NAME_IMPORTANT) != null;
+        if (important) {
+            message.put("text", "<!everyone> please have a look at this log message:");
+        }
+
         // Send the lines below the first line as an attachment.
         if (parts.length > 1 && !parts[1].trim().isEmpty()) {
             // we have two parts -> use main part a pretext

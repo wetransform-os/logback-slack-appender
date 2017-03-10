@@ -20,6 +20,8 @@ public class Markers {
   public static final String MARKER_NAME_SLACK = "SLACK";
   public static final String MARKER_NAME_NO_SLACK = "NO_SLACK";
 
+  public static final String MARKER_NAME_IMPORTANT = "IMPORTANT";
+
   public static final String MARKER_NAME_WRAPPER = "WRAPPER";
 
   public static final String MARKER_NAME_CONTEXT = "CONTEXT";
@@ -35,6 +37,11 @@ public class Markers {
    * Marker that marks a message that should specifically be logged via Slack.
    */
   public static final Marker SLACK = MarkerFactory.getMarker(MARKER_NAME_SLACK);
+
+  /**
+   * Marker that marks a message to be important(!).
+   */
+  public static final Marker IMPORTANT = MarkerFactory.getMarker(MARKER_NAME_IMPORTANT);
 
   /**
    * Create a marker with context information.
