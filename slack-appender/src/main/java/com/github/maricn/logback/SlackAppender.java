@@ -296,7 +296,20 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
 
     public void setWebhookUri(String webhookUri) {
-        this.webhookUri = webhookUri;
+        // verify webhook - could be just environment variable that is not replaced
+        // only accept if it is a valid URI including scheme
+        try {
+            URI uri = URI.create(webhookUri);
+            if (uri.getScheme() != null) {
+                // valid webhook
+                this.webhookUri = webhookUri;
+                return;
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+
+        this.webhookUri = null;
     }
 
     public int getShortFieldLimit() {
