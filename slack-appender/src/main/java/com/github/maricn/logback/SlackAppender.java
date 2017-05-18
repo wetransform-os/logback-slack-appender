@@ -48,9 +48,9 @@ public class SlackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     @Override
     protected void append(final ILoggingEvent evt) {
         try {
-            if (webhookUri != null) {
+            if (webhookUri != null && !webhookUri.isEmpty()) {
                 sendMessageWithWebhookUri(evt);
-            } else if (token != null) {
+            } else if (token != null && !token.isEmpty()) {
                 sendMessageWithToken(evt);
             }
             // just ignore if there is neither token nor webhook configured
