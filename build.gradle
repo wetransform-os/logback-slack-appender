@@ -1,10 +1,6 @@
-buildscript {
-  repositories {
-    jcenter()
-  }
-  dependencies {
-    classpath 'org.standardout:gradle-eclipseconfig:1.1.0'
-  }
+plugins {
+  id 'org.standardout.eclipseconfig' version '1.1.0' apply false
+  id 'to.wetransform.semantic-release-version' version '2.0.0' apply false
 }
 
 def srcProjects() {
@@ -22,16 +18,17 @@ def groovyProjects() {
 allprojects {
   group = 'to.wetransform.logging'
 
-  version = '1.6.0-SNAPSHOT'
+  apply plugin: 'to.wetransform.semantic-release-version'
 }
 
 configure(srcProjects()) {
   // common settings
   apply plugin: 'org.standardout.eclipseconfig'
-  apply plugin: 'maven'
+  apply plugin: 'java-library'
+  apply plugin: 'maven-publish'
 
   repositories {
-    jcenter()
+    mavenCentral()
   }
 
   ext {
@@ -42,13 +39,10 @@ configure(srcProjects()) {
 }
 
 configure(javaProjects()) {
-  // common settings for Java projects
-  apply plugin: 'java'
-
   // package javadoc into a jar file
   task packageJavadoc(type: Jar, dependsOn: 'javadoc') {
     from javadoc.destinationDir
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
   }
 }
 
@@ -59,48 +53,50 @@ configure(groovyProjects()) {
   // package groovydoc into a jar file
   task packageJavadoc(type: Jar, dependsOn: 'groovydoc') {
     from groovydoc.destinationDir
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
   }
 }
 
 configure(srcProjects()) { project ->
   // further common configuration (needs java/groovy config)
 
-  sourceCompatibility = '1.7'
-  targetCompatibility = '1.7'
+  java {
+    toolchain {
+      languageVersion = JavaLanguageVersion.of(17)
+    }
+  }
 
   // package source into a jar file
   task packageSources(type: Jar) {
     from sourceSets.main.allSource
-    classifier = 'sources'
+    archiveClassifier = 'sources'
   }
 
-  // define artifacts for upload
-  artifacts {
-    archives jar
-    archives packageJavadoc
-    archives packageSources
-  }
+  publishing {
+    publications {
+      mavenJava(MavenPublication) {
+        from components.java
+        artifact packageSources
+        artifact packageJavadoc
+      }
+    }
 
-  uploadArchives {
     repositories {
-      mavenDeployer {
-
-        // upload to wetransform artifactory
-        repository(url: 'https://artifactory.wetransform.to/artifactory/libs-release-local') {
-          authentication(userName: project.hasProperty('wetfArtifactoryUser') ? wetfArtifactoryUser : '',
-                password: project.hasProperty('wetfArtifactoryPassword') ? wetfArtifactoryPassword : '')
+      maven {
+        url = project.version.endsWith('-SNAPSHOT') ?
+          'https://artifactory.wetransform.to/artifactory/private-snapshot-local' :
+          'https://artifactory.wetransform.to/artifactory/private-release-local'
+        credentials {
+          username project.hasProperty('wetfArtifactoryUser') ? wetfArtifactoryUser : ''
+          password project.hasProperty('wetfArtifactoryPassword') ? wetfArtifactoryPassword : ''
         }
-        snapshotRepository(url: 'https://artifactory.wetransform.to/artifactory/libs-snapshot-local') {
-          authentication(userName: project.hasProperty('wetfArtifactoryUser') ? wetfArtifactoryUser : '',
-                password: project.hasProperty('wetfArtifactoryPassword') ? wetfArtifactoryPassword : '')
-        }
-
       }
     }
   }
+
 }
 
-task wrapper(type: Wrapper) {
-  gradleVersion = '3.4'
+tasks.wrapper {
+  distributionType = Wrapper.DistributionType.ALL
+  gradleVersion = '8.7'
 }
