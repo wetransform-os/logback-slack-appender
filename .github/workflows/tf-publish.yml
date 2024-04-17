@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   publish:
-    uses: wetransform/gha-workflows/.github/workflows/gradle-library-publish.yml@16304f8d69b02d41137c247ce895fa51e659213f # v2.0.1
+    uses: wetransform/gha-workflows/.github/workflows/gradle-library-publish.yml@b8c60e9a57fb6e01bf675dae1bb7fd14cbc1f399 # v2.0.2
     with:
       expect-tests: false
       java-version: 17
