@@ -16,6 +16,9 @@ concurrency:
 
 jobs:
   publish:
+    # Only on main repository (don't publish on forks)
+    if: github.repository_owner == 'wetransform-os'
+
     uses: wetransform/gha-workflows/.github/workflows/gradle-library-publish.yml@9264b26e1baa46d2ef3c860cd479bfae76ee12a3 # v2.5.1
     with:
       expect-tests: false
