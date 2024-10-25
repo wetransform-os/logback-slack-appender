@@ -28,6 +28,7 @@ jobs:
       java-version: 17
       multi-module: true
       semantic-release: true
+      skip-scan: false
     secrets:
       WETF_ARTIFACTORY_USER: ${{ secrets.WETF_ARTIFACTORY_USER }}
       WETF_ARTIFACTORY_PASSWORD: ${{ secrets.WETF_ARTIFACTORY_PASSWORD }}
