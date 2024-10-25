@@ -2,19 +2,22 @@ package to.wetf.logging.slf4j;
 
 import org.slf4j.Logger;
 import org.slf4j.Marker;
-import org.slf4j.event.Level;
+import org.slf4j.event.DefaultLoggingEvent;
+import org.slf4j.event.KeyValuePair;
+import org.slf4j.event.LoggingEvent;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
-import org.slf4j.spi.DefaultLoggingEventBuilder;
 import org.slf4j.spi.LocationAwareLogger;
-import org.slf4j.spi.LoggingEventBuilder;
+import org.slf4j.spi.LoggingEventAware;
+
+import java.util.List;
 
 /**
  * Decorator for a {@link Logger} that augments logging events with marker information.
  *
  * @author Simon Templer
  */
-public abstract class AbstractMarkerAugmentedLogger implements Logger {
+public abstract class AbstractMarkerAugmentedLogger implements Logger, LocationAwareLogger, LoggingEventAware {
 
   private final String fqcn;
   private final boolean locationAware;
@@ -40,18 +43,174 @@ public abstract class AbstractMarkerAugmentedLogger implements Logger {
   protected abstract Marker augmentMarker(Marker marker);
 
   @Override
-  public LoggingEventBuilder makeLoggingEventBuilder(Level level) {
-    // create builder directly associated with internal logger
-    // reason for this is that if the internal logger implements LoggingEventAware, the builder can directly use it and key value pairs are retained
-    var builder = new DefaultLoggingEventBuilder(logger, level);
+  public void log(Marker marker, String fqcn, int level, String message, Object[] argArray, Throwable t) {
+    marker = augmentMarker(marker);
+    if (locationAware) {
+      ((LocationAwareLogger) logger).log(marker, fqcn, level, message, argArray, t);
+    } else {
+      switch (level) {
+        case TRACE_INT:
+          logger.trace(marker, message, argArray, t);
+          break;
+        case DEBUG_INT:
+          logger.debug(marker, message, argArray, t);
+          break;
+        case INFO_INT:
+          logger.info(marker, message, argArray, t);
+          break;
+        case WARN_INT:
+          logger.warn(marker, message, argArray, t);
+          break;
+        case ERROR_INT:
+          logger.error(marker, message, argArray, t);
+          break;
+        default:
+          throw new IllegalStateException("Level number " + level + " is not recognized.");
+      }
+    }
+  }
 
-    // add marker
+  @Override
+  public void log(LoggingEvent event) {
     Marker marker = augmentMarker(null);
     if (marker != null) {
-      return builder.addMarker(marker);
+      // create a copy with the added marker
+      var copy = new DefaultLoggingEvent(event.getLevel(), this);
+
+      copy.setCallerBoundary(event.getCallerBoundary());
+      copy.setMessage(event.getMessage());
+      copy.setThrowable(event.getThrowable());
+      copy.setTimeStamp(event.getTimeStamp());
+
+      if (event.getArgumentArray() != null) {
+        copy.addArguments(event.getArgumentArray());
+      }
+
+      if (event.getKeyValuePairs() != null) {
+        for (KeyValuePair kvp : event.getKeyValuePairs()) {
+          copy.addKeyValue(kvp.key, kvp.value);
+        }
+      }
+
+      if (event.getMarkers() != null) {
+        for (Marker m : event.getMarkers()) {
+          copy.addMarker(m);
+        }
+      }
+
+      copy.addMarker(marker);
+
+      event = copy;
     }
 
-    return builder;
+    if (logger instanceof LoggingEventAware) {
+      ((LoggingEventAware) logger).log(event);
+      return;
+    }
+    if (locationAware) {
+      logViaLocationAwareLoggerAPI((LocationAwareLogger) logger, event);
+    } else {
+      logViaPublicSLF4JLoggerAPI(event);
+    }
+  }
+
+  private void logViaLocationAwareLoggerAPI(LocationAwareLogger locationAwareLogger, LoggingEvent aLoggingEvent) {
+    String msg = aLoggingEvent.getMessage();
+    List<Marker> markerList = aLoggingEvent.getMarkers();
+    String mergedMessage = mergeMarkersAndKeyValuePairsAndMessage(aLoggingEvent);
+    locationAwareLogger.log(null, aLoggingEvent.getCallerBoundary(), aLoggingEvent.getLevel().toInt(),
+      mergedMessage,
+      aLoggingEvent.getArgumentArray(), aLoggingEvent.getThrowable());
+  }
+
+  private void logViaPublicSLF4JLoggerAPI(LoggingEvent aLoggingEvent) {
+    Object[] argArray = aLoggingEvent.getArgumentArray();
+    int argLen = argArray == null ? 0 : argArray.length;
+
+    Throwable t = aLoggingEvent.getThrowable();
+    int tLen = t == null ? 0 : 1;
+
+    Object[] combinedArguments = new Object[argLen + tLen];
+
+    if(argArray != null) {
+      System.arraycopy(argArray, 0, combinedArguments, 0, argLen);
+    }
+    if(t != null) {
+      combinedArguments[argLen] = t;
+    }
+
+    String mergedMessage = mergeMarkersAndKeyValuePairsAndMessage(aLoggingEvent);
+
+    switch(aLoggingEvent.getLevel()) {
+      case TRACE:
+        logger.trace(mergedMessage, combinedArguments);
+        break;
+      case DEBUG:
+        logger.debug(mergedMessage, combinedArguments);
+        break;
+      case INFO:
+        logger.info(mergedMessage, combinedArguments);
+        break;
+      case WARN:
+        logger.warn(mergedMessage, combinedArguments);
+        break;
+      case ERROR:
+        logger.error(mergedMessage, combinedArguments);
+        break;
+    }
+  }
+
+  /**
+   * Prepend markers and key-value pairs to the message.
+   *
+   * @param aLoggingEvent
+   *
+   * @return
+   */
+  private String mergeMarkersAndKeyValuePairsAndMessage(LoggingEvent aLoggingEvent) {
+    StringBuilder sb = mergeMarkers(aLoggingEvent.getMarkers(), null);
+    sb = mergeKeyValuePairs(aLoggingEvent.getKeyValuePairs(), sb);
+    final String mergedMessage = mergeMessage(aLoggingEvent.getMessage(), sb);
+    return mergedMessage;
+  }
+
+  private StringBuilder mergeMarkers(List<Marker> markerList, StringBuilder sb) {
+    if(markerList == null || markerList.isEmpty())
+      return sb;
+
+    if(sb == null)
+      sb = new StringBuilder();
+
+    for(Marker marker : markerList) {
+      sb.append(marker);
+      sb.append(' ');
+    }
+    return sb;
+  }
+
+  private StringBuilder mergeKeyValuePairs(List<KeyValuePair> keyValuePairList, StringBuilder sb) {
+    if(keyValuePairList == null || keyValuePairList.isEmpty())
+      return sb;
+
+    if(sb == null)
+      sb = new StringBuilder();
+
+    for(KeyValuePair kvp : keyValuePairList) {
+      sb.append(kvp.key);
+      sb.append('=');
+      sb.append(kvp.value);
+      sb.append(' ');
+    }
+    return sb;
+  }
+
+  private String mergeMessage(String msg, StringBuilder sb) {
+    if(sb != null) {
+      sb.append(msg);
+      return sb.toString();
+    } else {
+      return msg;
+    }
   }
 
   @Override
