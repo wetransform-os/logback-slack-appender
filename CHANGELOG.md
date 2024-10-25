@@ -1,3 +1,14 @@
+## [2.1.0](https://github.com/wetransform-os/logback-slack-appender/compare/v2.0.0...v2.1.0) (2024-10-25)
+
+### Features
+
+* add augmented logger that can generate a marker on event time ([bf944c3](https://github.com/wetransform-os/logback-slack-appender/commit/bf944c385ce48eede2d9fa5952c1d8064b9fc20e))
+
+### Bug Fixes
+
+* **deps:** update dependency ch.qos.logback:logback-classic to v1.5.6 ([c57d5a9](https://github.com/wetransform-os/logback-slack-appender/commit/c57d5a9947e84ad3146e02a3c473ffef61e7f4f3))
+* **deps:** update gradle non-major dependencies ([4b39ca3](https://github.com/wetransform-os/logback-slack-appender/commit/4b39ca3fad6ca214f649318eb8ff8df0ca675d6e))
+
 ## [2.0.0](https://github.com/wetransform-os/logback-slack-appender/compare/v1.5.0...v2.0.0) (2024-04-17)
 
 
