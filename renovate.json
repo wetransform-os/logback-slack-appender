@@ -2,7 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>wetransform/renovate-config:default.json5",
-    "github>wetransform/renovate-config:group-nonmajor-manager.json5"
+    "github>wetransform/renovate-config:group-nonmajor-manager.json5",
+    "github>wetransform/renovate-config:hale-connect.json5",
   ],
   "includeForks": true
 }
