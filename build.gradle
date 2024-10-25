@@ -1,5 +1,4 @@
 plugins {
-  id 'org.standardout.eclipseconfig' version '1.1.0' apply false
   id 'to.wetransform.semantic-release-version' version '2.1.0' apply false
 }
 
@@ -23,7 +22,6 @@ allprojects {
 
 configure(srcProjects()) {
   // common settings
-  apply plugin: 'org.standardout.eclipseconfig'
   apply plugin: 'java-library'
   apply plugin: 'maven-publish'
 
