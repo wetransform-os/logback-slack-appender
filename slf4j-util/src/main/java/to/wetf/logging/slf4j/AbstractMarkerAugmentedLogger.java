@@ -2,9 +2,12 @@ package to.wetf.logging.slf4j;
 
 import org.slf4j.Logger;
 import org.slf4j.Marker;
+import org.slf4j.event.Level;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
+import org.slf4j.spi.DefaultLoggingEventBuilder;
 import org.slf4j.spi.LocationAwareLogger;
+import org.slf4j.spi.LoggingEventBuilder;
 
 /**
  * Decorator for a {@link Logger} that augments logging events with marker information.
@@ -35,6 +38,21 @@ public abstract class AbstractMarkerAugmentedLogger implements Logger {
    * @return the marker to use for the log event, may be <code>null</code>
    */
   protected abstract Marker augmentMarker(Marker marker);
+
+  @Override
+  public LoggingEventBuilder makeLoggingEventBuilder(Level level) {
+    // create builder directly associated with internal logger
+    // reason for this is that if the internal logger implements LoggingEventAware, the builder can directly use it and key value pairs are retained
+    var builder = new DefaultLoggingEventBuilder(logger, level);
+
+    // add marker
+    Marker marker = augmentMarker(null);
+    if (marker != null) {
+      return builder.addMarker(marker);
+    }
+
+    return builder;
+  }
 
   @Override
   public boolean isTraceEnabled() {
