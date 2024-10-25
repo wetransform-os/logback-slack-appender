@@ -1,3 +1,10 @@
+## [2.2.0](https://github.com/wetransform-os/logback-slack-appender/compare/v2.1.0...v2.2.0) (2024-10-25)
+
+### Features
+
+* add helpers for creating augmented loggers ([6d3d600](https://github.com/wetransform-os/logback-slack-appender/commit/6d3d600b89bb53b4aa4c8a21cba14e418ec02abd))
+* improve support for fluent API ([8876060](https://github.com/wetransform-os/logback-slack-appender/commit/88760607ed32fbff405cdfd30af51b178e1e2647))
+
 ## [2.1.0](https://github.com/wetransform-os/logback-slack-appender/compare/v2.0.0...v2.1.0) (2024-10-25)
 
 ### Features
