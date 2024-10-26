@@ -24,7 +24,7 @@ public class MarkerAugmentedLogger extends AbstractMarkerAugmentedLogger {
 
   @Override
   protected Marker augmentMarker(Marker marker) {
-    return Markers.combineMarkers(marker, this.marker);
+    return Markers.combineContext(marker, this.marker);
   }
 
 }

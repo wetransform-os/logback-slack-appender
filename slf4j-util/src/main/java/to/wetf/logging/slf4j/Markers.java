@@ -103,6 +103,42 @@ public class Markers {
     }
   }
 
+  public static Marker combineContext(Marker marker1, Marker marker2) {
+    if (marker1 == null) {
+      return marker2;
+    }
+    else if (marker2 == null) {
+      return marker1;
+    }
+    else {
+      var combinedContext = new HashMap<String, String>();
+
+      combinedContext.putAll(getContext(marker1, true));
+      combinedContext.putAll(getContext(marker2, true));
+
+      if (marker1.getName().equals(MARKER_NAME_CONTEXT)) {
+        marker1 = null;
+      }
+      if (marker2.getName().equals(MARKER_NAME_CONTEXT)) {
+        marker2 = null;
+      }
+
+      if (marker1 == null && marker2 == null) {
+        return contextMarker(combinedContext);
+      }
+      else if (marker1 != null && marker2 != null) {
+        return combineMarkers(marker1, marker2, contextMarker(combinedContext));
+      }
+      else if (marker1 != null) {
+        return combineMarkers(marker1, contextMarker(combinedContext));
+      }
+      else {
+        return combineMarkers(marker2, contextMarker(combinedContext));
+      }
+    }
+
+  }
+
   /**
    * Get context information from a marker.
    *
@@ -110,9 +146,19 @@ public class Markers {
    * @return the map with context information, an empty map if none could be found
    */
   public static Map<String, String> getContext(Marker marker) {
+    return getContext(marker, false);
+  }
+
+  /**
+   * Get context information from a marker.
+   *
+   * @param marker the marker
+   * @return the map with context information, an empty map if none could be found
+   */
+  public static Map<String, String> getContext(Marker marker, boolean remove) {
     Map<String, String> result = new HashMap<>();
 
-    Marker context = findMarker(marker, MARKER_NAME_CONTEXT);
+    Marker context = findMarker(marker, MARKER_NAME_CONTEXT, remove);
     if (context != null && context.hasReferences()) {
       Iterator<Marker> it = context.iterator();
       while (it.hasNext()) {
@@ -140,6 +186,18 @@ public class Markers {
    * @return the found marker or <code>null</code>
    */
   public static Marker findMarker(Marker marker, String name) {
+    return findMarker(marker, name, false);
+  }
+
+  /**
+   * Find the marker with the given name in the given marker or its references
+   *
+   * @param marker the marker to search
+   * @param name the name of the marker to find
+   *
+   * @return the found marker or <code>null</code>
+   */
+  public static Marker findMarker(Marker marker, String name, boolean remove) {
     if (marker == null) {
       return null;
     }
@@ -152,7 +210,15 @@ public class Markers {
       while (refs.hasNext()) {
         Object ref = refs.next();
         if (ref instanceof Marker) {
-          Marker result = findMarker((Marker) ref, name);
+          var refMarker = (Marker) ref;
+          if (refMarker.getName().equals(name)) {
+            if (remove) {
+              refs.remove();
+            }
+            return refMarker;
+          }
+
+          Marker result = findMarker((Marker) ref, name, remove);
           if (result != null) {
             return result;
           }
