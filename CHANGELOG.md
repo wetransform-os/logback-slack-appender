@@ -1,3 +1,14 @@
+## [2.3.0](https://github.com/wetransform-os/logback-slack-appender/compare/v2.2.0...v2.3.0) (2024-10-26)
+
+### Features
+
+* implement extended logger interfaces ([3cf4bbe](https://github.com/wetransform-os/logback-slack-appender/commit/3cf4bbee3517c246e839e732033e869d7cefdc5f))
+
+### Bug Fixes
+
+* **deps:** update dependency ch.qos.logback:logback-classic to v1.5.12 ([9e61246](https://github.com/wetransform-os/logback-slack-appender/commit/9e612466ceb5e6f0fe6754b115e37b75882f7a1a))
+* fix combining context markers ([51625d4](https://github.com/wetransform-os/logback-slack-appender/commit/51625d43b767f42113c6a5c37874855f8b2de80e))
+
 ## [2.2.0](https://github.com/wetransform-os/logback-slack-appender/compare/v2.1.0...v2.2.0) (2024-10-25)
 
 ### Features
