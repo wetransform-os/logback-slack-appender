@@ -31,7 +31,7 @@ configure(srcProjects()) {
 
   ext {
     logbackVersion = '1.5.32'
-    slf4jVersion = '2.0.17'
+    slf4jVersion = '2.0.18'
     jacksonVersion = '2.21.3'
   }
 }
