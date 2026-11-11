@@ -96,5 +96,5 @@ configure(srcProjects()) { project ->
 
 tasks.wrapper {
   distributionType = Wrapper.DistributionType.ALL
-  gradleVersion = '9.8.2'
+  gradleVersion = '9.9.1'
 }
